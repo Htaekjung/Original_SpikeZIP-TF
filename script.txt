@@ -1,0 +1,216 @@
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                                 QANN & SNN 학습 - Cifar100
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+//////////////////////
+A9 Table - relu/gelu
+//////////////////////
+NCCL_P2P_DISABLE=1 OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 \
+python3 -m torch.distributed.run --nproc_per_node=8 --master_port='29500' main_finetune_distill.py \
+    --dataset cifar100 \
+    --nb_classes 100 \
+    --data_path /home/hyuntaek/cifar_100_dataset \
+    --batch_size 128 \
+    --accum_iter 2 \
+    --model vit_small_patch16 \
+    --model_teacher vit_small_patch16 \
+    --finetune /home/hyuntaek/SpikeZIP-TF_Code/finetune/vit-small-patch16-relu-82.34_pretrainedANN.pth \
+    --pretrain_teacher /home/hyuntaek/SpikeZIP-TF_Code/finetune/vit-small-patch16-relu-82.34_pretrainedANN.pth \
+    --epochs 100 \
+    --blr 1e-4 --layer_decay 0.65 --warmup_epochs 5 \
+    --weight_decay 0.05 --drop_path 0.1 --drop_rate 0.0 --mixup 0.8 --cutmix 1.0 \
+    --dist_eval \
+    --output_dir ./output_path --log_dir ./log \
+    --mode "ANN" --level 32 --act_layer relu --act_layer_teacher relu \
+    --temp 2.0 --wandb --print_freq 200 \
+    --define_params --mean 0.4914 0.4822 0.4465 --std 0.2023 0.1994 0.2010
+
+NCCL_P2P_DISABLE=1 OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES=2,3,4,5,6,7 \
+python3 -m torch.distributed.run --nproc_per_node=6 --master_port='29502' main_finetune_distill.py \
+    --dataset cifar100 \
+    --nb_classes 100 \
+    --data_path /home/hyuntaek/cifar_100_dataset \
+    --batch_size 128 \
+    --accum_iter 2 \
+    --model vit_small_patch16 \
+    --model_teacher vit_small_patch16 \
+    --finetune /home/hyuntaek/SpikeZIP-TF_Code/finetune/vit-small-patch16-relu-82.34_pretrainedANN.pth \
+    --pretrain_teacher /home/hyuntaek/SpikeZIP-TF_Code/finetune/vit-small-patch16-relu-82.34_pretrainedANN.pth \
+    --epochs 100 \
+    --blr 1e-4 --layer_decay 0.65 --warmup_epochs 5 \
+    --weight_decay 0.05 --drop_path 0.1 --drop_rate 0.0 --mixup 0.8 --cutmix 1.0 \
+    --dist_eval \
+    --output_dir ./output_path --log_dir ./log \
+    --mode "ANN" --level 32 --act_layer gelu --act_layer_teacher gelu \
+    --temp 2.0 --wandb --print_freq 200 \
+    --define_params --mean 0.4914 0.4822 0.4465 --std 0.2023 0.1994 0.2010
+
+//////////////////////
+A10 Table - relu/gelu
+//////////////////////
+NCCL_P2P_DISABLE=1 OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES=2,3,4,5,6,7 \
+python3 -m torch.distributed.run --nproc_per_node=6 --master_port='29501' main_finetune_distill.py \
+    --dataset cifar100 \
+    --nb_classes 100 \
+    --data_path /home/hyuntaek/cifar_100_dataset \
+    --batch_size 128 \
+    --accum_iter 2 \
+    --model vit_small_patch16 \
+    --finetune "/home/hyuntaek/Original_SpikeZIP-TF/output_path/T-SNN_vit_small_patch16_cifar100_relu_ANN_act32_weightbit32/checkpoint-99.pth" \
+    --pretrain_teacher "/home/hyuntaek/Original_SpikeZIP-TF/output_path/T-SNN_vit_small_patch16_cifar100_relu_ANN_act32_weightbit32/checkpoint-99.pth" \
+    --model_teacher vit_small_patch16 \
+    --epochs 300 \
+    --blr 1.5e-4 --layer_decay 0.65 --warmup_epochs 5 \
+    --weight_decay 0.05 --drop_path 0.1 --drop_rate 0.0 --mixup 0.8 --cutmix 1.0 \
+    --dist_eval \
+    --output_dir ./output_path --log_dir ./log \
+    --mode "QANN_QAT" --level 16 --act_layer relu --act_layer_teacher relu \
+    --temp 2.0 --wandb --print_freq 200 \
+    --define_params --mean 0.4914 0.4822 0.4465 --std 0.2023 0.1994 0.2010
+
+NCCL_P2P_DISABLE=1 OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES=2,3,4,5,6,7 \
+python3 -m torch.distributed.run --nproc_per_node=6 --master_port='29502' main_finetune_distill.py \
+    --dataset cifar100 \
+    --nb_classes 100 \
+    --data_path /home/hyuntaek/cifar_100_dataset \
+    --batch_size 128 \
+    --accum_iter 2 \
+    --model vit_small_patch16 \
+    --finetune /home/hyuntaek/Original_SpikeZIP-TF/output_path/T-SNN_vit_small_patch16_cifar100_gelu_ANN_act32_weightbit32_-10_245/checkpoint-99.pth \
+    --pretrain_teacher /home/hyuntaek/Original_SpikeZIP-TF/output_path/T-SNN_vit_small_patch16_cifar100_gelu_ANN_act32_weightbit32_-10_245/checkpoint-99.pth \
+    --model_teacher vit_small_patch16 \
+    --epochs 300 \
+    --blr 1.5e-4 --layer_decay 0.65 --warmup_epochs 5 \
+    --weight_decay 0.05 --drop_path 0.1 --drop_rate 0.0 --mixup 0.8 --cutmix 1.0 \
+    --dist_eval \
+    --output_dir ./output_path --log_dir ./log \
+    --mode "QANN_QAT" --level 16 --act_layer gelu --act_layer_teacher gelu \
+    --temp 2.0 --wandb --print_freq 200 \
+    --define_params --mean 0.4914 0.4822 0.4465 --std 0.2023 0.1994 0.2010
+
+//////////////////////
+A9->ANN 성능평가 - relu/gelu
+//////////////////////
+NCCL_P2P_DISABLE=1 OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES=2,3,4,5,6,7 \
+python3 -m torch.distributed.run --nproc_per_node=6 --master_port='29500' main_finetune.py \
+    --dataset cifar100 \
+    --nb_classes 100 \
+    --data_path /home/hyuntaek/cifar_100_dataset \
+    --batch_size 128 \
+    --accum_iter 2 \
+    --model vit_small_patch16 \
+    --finetune /home/hyuntaek/Original_SpikeZIP-TF/output_path/T-SNN_vit_small_patch16_cifar100_gelu_ANN_act32_weightbit32_-10_245/checkpoint-99.pth \
+    --resume /home/hyuntaek/Original_SpikeZIP-TF/output_path/T-SNN_vit_small_patch16_cifar100_relu_ANN_act32_weightbit32/checkpoint-99.pth \
+    --epochs 100 \
+    --blr 1e-4 --layer_decay 0.65 --warmup_epochs 5 \
+    --weight_decay 0.05 --drop_path 0.1 --drop_rate 0.0 --mixup 0.8 --cutmix 1.0 \
+    --dist_eval \
+    --output_dir ./output_path --log_dir ./log \
+    --mode "ANN" --level 16 --act_layer relu \
+    --wandb --print_freq 200 \
+    --define_params --mean 0.4914 0.4822 0.4465 --std 0.2023 0.1994 0.2010\
+    --eval --time_step 64 --encoding_type analog --ratio 0 --weight_quantization_bit 32
+
+NCCL_P2P_DISABLE=1 OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES=2,3,4,5,6,7 \
+python3 -m torch.distributed.run --nproc_per_node=6 --master_port='29501' main_finetune.py \
+    --dataset cifar100 \
+    --nb_classes 100 \
+    --data_path /home/hyuntaek/cifar_100_dataset \
+    --batch_size 128 \
+    --accum_iter 2 \
+    --model vit_small_patch16 \
+    --finetune /home/hyuntaek/Original_SpikeZIP-TF/output_path/T-SNN_vit_small_patch16_cifar100_gelu_ANN_act32_weightbit32_-10_245/checkpoint-99.pth \
+    --resume /home/hyuntaek/Original_SpikeZIP-TF/output_path/T-SNN_vit_small_patch16_cifar100_gelu_ANN_act32_weightbit32_-10_245/checkpoint-99.pth \
+    --epochs 100 \
+    --blr 1e-4 --layer_decay 0.65 --warmup_epochs 5 \
+    --weight_decay 0.05 --drop_path 0.1 --drop_rate 0.0 --mixup 0.8 --cutmix 1.0 \
+    --dist_eval \
+    --output_dir ./output_path --log_dir ./log \
+    --mode "ANN" --level 16 --act_layer gelu \
+    --wandb --print_freq 200 \
+    --define_params --mean 0.4914 0.4822 0.4465 --std 0.2023 0.1994 0.2010\
+    --eval --time_step 64 --encoding_type analog --ratio 0 --weight_quantization_bit 32
+
+
+
+//////////////////////
+A10 -> QANN 성능 평가
+//////////////////////
+NCCL_P2P_DISABLE=1 OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES=2,3,4,5,6,7 \
+python3 -m torch.distributed.run --nproc_per_node=6 --master_port='29500' main_finetune.py \
+    --dataset cifar100 \
+    --nb_classes 100 \
+    --data_path /home/hyuntaek/cifar_100_dataset \
+    --batch_size 128 \
+    --accum_iter 2 \
+    --model vit_small_patch16 \
+    --resume /home/hyuntaek/Original_SpikeZIP-TF/output_path/T-SNN_vit_small_patch16_cifar100_relu_QANN_QAT_act16_weightbit32_MyQuan_LSQ+_V2/checkpoint-best.pth \
+    --epochs 100 \
+    --blr 1e-4 --layer_decay 0.65 --warmup_epochs 5 \
+    --weight_decay 0.05 --drop_path 0.1 --drop_rate 0.0 --mixup 0.8 --cutmix 1.0 \
+    --dist_eval \
+    --output_dir ./output_path --log_dir ./log \
+    --mode "QANN_QAT" --level 16 --act_layer relu \
+    --wandb --print_freq 200 \
+    --define_params --mean 0.4914 0.4822 0.4465 --std 0.2023 0.1994 0.2010\
+    --eval --time_step 64 --encoding_type analog --ratio 0 --weight_quantization_bit 32
+
+NCCL_P2P_DISABLE=1 OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES=2,3,4,5,6,7 \
+python3 -m torch.distributed.run --nproc_per_node=6 --master_port='29502' main_finetune.py \
+    --dataset cifar100 \
+    --nb_classes 100 \
+    --data_path /home/hyuntaek/cifar_100_dataset \
+    --batch_size 128 \
+    --accum_iter 2 \
+    --model vit_small_patch16 \
+    --resume /home/hyuntaek/Original_SpikeZIP-TF/output_path/T-SNN_vit_small_patch16_cifar100_relu_QANN_QAT_act16_weightbit32_89.27/checkpoint-299.pth \
+    --epochs 100 \
+    --blr 1e-4 --layer_decay 0.65 --warmup_epochs 5 \
+    --weight_decay 0.05 --drop_path 0.1 --drop_rate 0.0 --mixup 0.8 --cutmix 1.0 \
+    --dist_eval \
+    --output_dir ./output_path --log_dir ./log \
+    --mode "QANN_QAT" --level 16 --act_layer gelu \
+    --wandb --print_freq 200 \
+    --define_params --mean 0.4914 0.4822 0.4465 --std 0.2023 0.1994 0.2010\
+    --eval --time_step 64 --encoding_type analog --ratio 0 --weight_quantization_bit 32
+
+//////////////////////
+A10 -> SNN 성능 평가
+//////////////////////
+
+NCCL_P2P_DISABLE=1 OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES=2,3,4,5,6,7 \
+python3 -m torch.distributed.run --nproc_per_node=6 --master_port='29502' main_finetune.py \
+    --dataset cifar100 \
+    --nb_classes 100 \
+    --data_path /home/hyuntaek/cifar_100_dataset \
+    --batch_size 128 \
+    --accum_iter 2 \
+    --model vit_small_patch16 \
+    --resume /home/hyuntaek/Original_SpikeZIP-TF/output_path/T-SNN_vit_small_patch16_cifar100_relu_QANN_QAT_act16_weightbit32_89.27/checkpoint-299.pth \
+    --epochs 100 \
+    --blr 1e-4 --layer_decay 0.65 --warmup_epochs 5 \
+    --weight_decay 0.05 --drop_path 0.1 --drop_rate 0.0 --mixup 0.8 --cutmix 1.0 \
+    --dist_eval \
+    --output_dir ./output_path --log_dir ./log \
+    --mode "SNN" --level 16 --act_layer relu \
+    --wandb --print_freq 200 \
+    --define_params --mean 0.4914 0.4822 0.4465 --std 0.2023 0.1994 0.2010\
+    --eval --time_step 32 --encoding_type analog --ratio 0 --weight_quantization_bit 32
+
+NCCL_P2P_DISABLE=1 OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES=2,3,4,5,6,7 \
+python3 -m torch.distributed.run --nproc_per_node=6 --master_port='29502' main_finetune.py \
+    --dataset cifar100 \
+    --nb_classes 100 \
+    --data_path /home/hyuntaek/cifar_100_dataset \
+    --batch_size 128 \
+    --accum_iter 2 \
+    --model vit_small_patch16 \
+    --resume /home/hyuntaek/Original_SpikeZIP-TF/output_path/T-SNN_vit_small_patch16_cifar100_gelu_QANN_QAT_act16_weightbit32_89.41/checkpoint-299.pth \
+    --blr 1e-4 --layer_decay 0.65 --warmup_epochs 5 \
+    --weight_decay 0.05 --drop_path 0.1 --drop_rate 0.0 --mixup 0.8 --cutmix 1.0 \
+    --dist_eval \
+    --output_dir ./output_path --log_dir ./log \
+    --mode "SNN" --level 16 --act_layer gelu \
+    --wandb --print_freq 200 \
+    --define_params --mean 0.4914 0.4822 0.4465 --std 0.2023 0.1994 0.2010\
+    --eval --time_step 32 --encoding_type analog --ratio 0 --weight_quantization_bit 32

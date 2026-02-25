@@ -318,8 +318,164 @@ def remove_softmax(model):
             remove_softmax(child)
 
 
+class Distilled_GELU(nn.Module):
+    def __init__(self, load_distilled_weights=False, num_neurons=64, path=None):
+        super().__init__()
+        # GELU를 근사하는 2층 MLP 구조
+        self.approximator = nn.Sequential(
+            nn.Linear(1, num_neurons),
+            nn.ReLU(),
+            nn.Linear(num_neurons, 1)
+        )
+        
+        # 가중치 고정 및 로드
+        if load_distilled_weights and path is not None:
+            self.load_state_dict(torch.load(path, map_location='cpu'))
+        
+        for param in self.parameters():
+            param.requires_grad = False
 
-def myquan_replace(model,level,weight_bit=32, is_softmax = True):
+    def reset(self):
+        # ANN 근사기이므로 별도의 State는 없지만, 
+        # reset_model 함수와의 호환성을 위해 빈 메서드를 유지합니다.
+        pass
+
+    def forward(self, x):
+        # 입력 x의 마지막 차원을 1로 확장하여 MLP 통과 후 다시 복구
+        # (B, L, D) -> (B, L, D, 1) -> MLP -> (B, L, D, 1) -> (B, L, D)
+        shape = x.shape
+        x = x.reshape(-1, 1)
+        x = self.approximator(x)
+        return x.reshape(shape)
+    
+def get_distilled_gelu(device='cuda', float16=False, num_neurons=64, path=None):
+    model = Distilled_GELU(load_distilled_weights=True, num_neurons=num_neurons, path=path)
+    model = model.to(device)
+    if float16:
+        model = model.half()
+    return model
+def replace_gelu_with_relu(model, convert_layers, num_neurons=64, path=None, device='cpu'):
+    """
+    convert_layers: ['blocks.0', 'blocks.1'] 등 교체할 레이어 경로 리스트
+    """
+    for m_str in convert_layers:
+        # 문자열 경로를 통해 실제 모듈에 접근
+        target_block = model
+        for attr in m_str.split('.'):
+            target_block = getattr(target_block, attr)
+        
+        # 해당 블록 내부의 mlp.act(GELU)를 교체
+        if hasattr(target_block.mlp, 'act'):
+            target_block.mlp.act = get_distilled_gelu(
+                device=device, 
+                float16=False, 
+                num_neurons=num_neurons, 
+                path=path
+            )
+
+
+def myquan_replace(model, level, weight_bit=32, is_softmax=True, args=None, device='cpu'):
+    index = 0
+    cur_index = 0
+    
+    # 1. 인덱스 카운팅 (기존 로직 유지)
+    def get_index(model):
+        nonlocal index
+        children = list(model.named_children())
+        for name, child in children:
+            is_need = False
+            if isinstance(child, QAttention):
+                index = index + 1
+                is_need = True
+            if not is_need:
+                get_index(child)
+
+    def _myquan_replace(model, level):
+        nonlocal index
+        nonlocal cur_index
+        children = list(model.named_children())
+        for name, child in children:
+            is_need = False
+            
+            # --- CASE 1: Block 발견 시 (내부 레이어들을 한꺼번에 교체) ---
+            if isinstance(child, Block):
+                # 1. Attention 교체
+                if hasattr(child.attn, 'head_dim'):
+                    head_dim = child.attn.head_dim
+                else:
+                    head_dim = child.attn.qkv.in_features // child.attn.num_heads
+
+                qattn = QAttention(dim=child.attn.num_heads * head_dim, num_heads=child.attn.num_heads, level=level, is_softmax=is_softmax)
+                qattn.qkv = child.attn.qkv
+                qattn.attn_drop = child.attn.attn_drop
+                qattn.proj = child.attn.proj
+                qattn.proj_drop = child.attn.proj_drop
+                model._modules[name].attn = qattn
+                
+                # 2. Norm 레이어 교체
+                model._modules[name].norm1 = nn.Sequential(child.norm1, MyQuan(level, sym=True))
+                model._modules[name].norm2 = nn.Sequential(child.norm2, MyQuan(level, sym=True))
+
+                # 3. [핵심] MLP 내부의 act(GELU)를 UGO로 직접 교체
+                path = args.gelu_path if args else '/home/hyuntaek/STA/premodels/distilled_gelu_64.pth'
+                ugo_module = get_distilled_gelu(
+                    device=device, 
+                    float16=False, 
+                    num_neurons=64, 
+                    path=path
+                )
+
+                # 기존 child.mlp.act 대신 ugo_module을 MyQuan 뒤에 부착합니다.
+                model._modules[name].mlp.act = nn.Sequential(MyQuan(level, sym=False), ugo_module)
+
+                # 4. MLP의 FC2 교체
+                model._modules[name].mlp.fc2 = nn.Sequential(child.mlp.fc2, MyQuan(level, sym=True))
+                
+                cur_index = cur_index + 1
+                is_need = True # Block 전체를 여기서 처리했으므로 더 이상 이 아래로(재귀) 내려가지 않음
+
+            # --- CASE 2: Block 외부에 개별적으로 존재하는 GELU 처리 ---
+            elif isinstance(child, nn.GELU):
+                path = args.gelu_path if args else '/home/hyuntaek/STA/premodels/distilled_gelu_64.pth'
+                model._modules[name] = get_distilled_gelu(
+                    device=device, 
+                    float16=False, 
+                    num_neurons=64, 
+                    path=path
+                )
+                is_need = True
+                
+            # --- CASE 3: 기타 레이어 (Conv2d, LayerNorm) ---
+            elif isinstance(child, nn.Conv2d):
+                model._modules[name] = nn.Sequential(child, MyQuan(level, sym=True))
+                is_need = True
+                
+            elif isinstance(child, nn.LayerNorm):
+                model._modules[name] = nn.Sequential(child, MyQuan(level, sym=True))
+                is_need = True
+            
+            # 처리가 안 된 컨테이너 모듈이 있으면 더 깊게 탐색
+            if not is_need:
+                _myquan_replace(child, level)
+    def _weight_quantization(model,weight_bit):
+        children = list(model.named_children())
+        for name, child in children:
+            is_need = False
+            if isinstance(child, nn.Conv2d):
+                model._modules[name] = QuanConv2d(m=child,quan_w_fn=MyQuan(level = 2**weight_bit,sym=True))
+                is_need = True
+            elif isinstance(child, nn.Linear):
+                model._modules[name] = QuanLinear(m=child,quan_w_fn=MyQuan(level = 2**weight_bit,sym=True))
+                is_need = True
+            if not is_need:
+                _weight_quantization(child,weight_bit)
+    get_index(model)
+    _myquan_replace(model,level)
+    if weight_bit < 32:
+        _weight_quantization(model,weight_bit)
+
+
+def myquan_replace_QANN(model,level,weight_bit=32, is_softmax = True):
     index = 0
     cur_index = 0
     def get_index(model):

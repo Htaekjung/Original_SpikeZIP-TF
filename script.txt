@@ -144,7 +144,7 @@ python3 -m torch.distributed.run --nproc_per_node=6 --master_port='29500' main_f
     --batch_size 128 \
     --accum_iter 2 \
     --model vit_small_patch16 \
-    --resume /home/hyuntaek/Original_SpikeZIP-TF/output_path/T-SNN_vit_small_patch16_cifar100_relu_QANN_QAT_act16_weightbit32_MyQuan_LSQ+_V2/checkpoint-best.pth \
+    --resume /home/hyuntaek/Original_SpikeZIP-TF/output_path/T-SNN_vit_small_patch16_cifar100_relu_QANN_QAT_act16_weightbit32_89.27/checkpoint-299.pth \
     --epochs 100 \
     --blr 1e-4 --layer_decay 0.65 --warmup_epochs 5 \
     --weight_decay 0.05 --drop_path 0.1 --drop_rate 0.0 --mixup 0.8 --cutmix 1.0 \
@@ -163,7 +163,7 @@ python3 -m torch.distributed.run --nproc_per_node=6 --master_port='29502' main_f
     --batch_size 128 \
     --accum_iter 2 \
     --model vit_small_patch16 \
-    --resume /home/hyuntaek/Original_SpikeZIP-TF/output_path/T-SNN_vit_small_patch16_cifar100_relu_QANN_QAT_act16_weightbit32_89.27/checkpoint-299.pth \
+    --resume /home/hyuntaek/Original_SpikeZIP-TF/output_path/T-SNN_vit_small_patch16_cifar100_gelu_QANN_QAT_act16_weightbit32_89.41/checkpoint-299.pth\
     --epochs 100 \
     --blr 1e-4 --layer_decay 0.65 --warmup_epochs 5 \
     --weight_decay 0.05 --drop_path 0.1 --drop_rate 0.0 --mixup 0.8 --cutmix 1.0 \
@@ -202,10 +202,10 @@ python3 -m torch.distributed.run --nproc_per_node=6 --master_port='29502' main_f
     --dataset cifar100 \
     --nb_classes 100 \
     --data_path /home/hyuntaek/cifar_100_dataset \
-    --batch_size 128 \
+    --batch_size 32 \
     --accum_iter 2 \
     --model vit_small_patch16 \
-    --resume /home/hyuntaek/Original_SpikeZIP-TF/output_path/T-SNN_vit_small_patch16_cifar100_gelu_QANN_QAT_act16_weightbit32_89.41/checkpoint-299.pth \
+    --resume /home/hyuntaek/Original_SpikeZIP-TF/output_path/T-SNN_vit_small_patch16_cifar100_gelu_QANN_QAT_act16_weightbit32_89.41/checkpoint-299.pth\
     --blr 1e-4 --layer_decay 0.65 --warmup_epochs 5 \
     --weight_decay 0.05 --drop_path 0.1 --drop_rate 0.0 --mixup 0.8 --cutmix 1.0 \
     --dist_eval \

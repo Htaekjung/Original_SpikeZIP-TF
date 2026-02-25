@@ -160,7 +160,7 @@ python3 -m torch.distributed.run --nproc_per_node=6 --master_port='29502' main_f
     --dataset cifar100 \
     --nb_classes 100 \
     --data_path /home/hyuntaek/cifar_100_dataset \
-    --batch_size 128 \
+    --batch_size 32 \
     --accum_iter 2 \
     --model vit_small_patch16 \
     --resume /home/hyuntaek/Original_SpikeZIP-TF/output_path/T-SNN_vit_small_patch16_cifar100_gelu_QANN_QAT_act16_weightbit32_89.41/checkpoint-299.pth\
@@ -197,8 +197,8 @@ python3 -m torch.distributed.run --nproc_per_node=6 --master_port='29502' main_f
     --define_params --mean 0.4914 0.4822 0.4465 --std 0.2023 0.1994 0.2010\
     --eval --time_step 32 --encoding_type analog --ratio 0 --weight_quantization_bit 32
 
-NCCL_P2P_DISABLE=1 OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES=2,3,4,5,6,7 \
-python3 -m torch.distributed.run --nproc_per_node=6 --master_port='29502' main_finetune.py \
+NCCL_P2P_DISABLE=1 OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6 \
+python3 -m torch.distributed.run --nproc_per_node=7 --master_port='29500' main_finetune.py \
     --dataset cifar100 \
     --nb_classes 100 \
     --data_path /home/hyuntaek/cifar_100_dataset \

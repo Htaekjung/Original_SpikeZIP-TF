@@ -417,7 +417,9 @@ def myquan_replace(model, level, weight_bit=32, is_softmax=True, args=None, devi
                 model._modules[name].norm2 = nn.Sequential(child.norm2, MyQuan(level, sym=True))
 
                 # 3. [핵심] MLP 내부의 act(GELU)를 UGO로 직접 교체
+                # path = args.gelu_path if args else '/home/hyuntaek/STA/distilled_quickgelu_ugo_n32.pth'
                 path = args.gelu_path if args else '/home/hyuntaek/STA/premodels/distilled_gelu_64.pth'
+
                 ugo_module = get_distilled_gelu(
                     device=device, 
                     float16=False, 
@@ -436,6 +438,7 @@ def myquan_replace(model, level, weight_bit=32, is_softmax=True, args=None, devi
 
             # --- CASE 2: Block 외부에 개별적으로 존재하는 GELU 처리 ---
             elif isinstance(child, nn.GELU):
+                # path = args.gelu_path if args else '/home/hyuntaek/STA/distilled_quickgelu_ugo_n32.pth'
                 path = args.gelu_path if args else '/home/hyuntaek/STA/premodels/distilled_gelu_64.pth'
                 model._modules[name] = get_distilled_gelu(
                     device=device, 
